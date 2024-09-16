@@ -1,0 +1,29 @@
+name: Deploy to EC2 Auto Scaling Group
+
+on:
+  push:
+    branches:
+      - main  # Adjust the branch as needed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2  # Adjust the region
+
+    - name: Upload index.html via SSM
+      run: |
+        aws ssm send-command \
+          --document-name "AWS-RunShellScript" \
+          --targets '[{"Key":"tag:Environment","Values":["Production"]}]' \
+          --parameters 'commands=["sudo cp https://github.com/RajeshCShettigar/turbo-umbrella/blob/main/index.html /var/www/html/index.html"]' \
+          --comment "Deploying index.html to Apache server"
